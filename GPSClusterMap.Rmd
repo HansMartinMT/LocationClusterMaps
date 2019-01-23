@@ -1,0 +1,95 @@
+---
+title: "GPS Cluster Map"
+author: "HansMartin"
+date: "May 11, 2018"
+output: html_document
+---
+
+
+```{r include=FALSE, echo=FALSE,echo=FALSE, message=FALSE}
+#function to install and load required packages
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+#load or install these packages:
+packages <- c("ks", "lattice", "plotrix", "adehabitatHR", "maptools", "foreign", "rgdal", "sp", "raster",
+              "ggplot2","colorRamps","rgeos","leaflet","lubridate", "htmlwidgets","move", "tmap","grid", "leaflet")
+
+#run function to install packages
+ipak(packages)
+```
+
+
+```{r include=FALSE, echo=FALSE,echo=FALSE, message=FALSE}
+
+clustershp<-readOGR("C:/Users/Hans Martin/Documents/GitHub/LocationClusterMaps/Shapefile/wolf_clusters.shp")
+##Load study area extent
+```
+```{r include=FALSE, echo=FALSE,echo=FALSE, message=FALSE}
+#Study Extent
+studyextent<-readOGR("C:/Users/Hans Martin/Documents/GitHub/MappingLocationData/YHT Study Extent/YHTstudy_extent.shp")
+studyextent<-spTransform(studyextent,CRS("+proj=utm +zone=11 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")) #reproject using the landcover projection
+#Ya Ha Tinda Boundary
+yahatinda<-readOGR("C:/Users/Hans Martin/Documents/GitHub/MappingLocationData/YaHaTindaShape")
+proj4string(yahatinda)<-CRS("+proj=utm +zone=11 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+yahatinda<-spTransform(yahatinda,CRS("+proj=utm +zone=11 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"))
+
+#Park Regions
+BanffRegions<-readOGR("C:/Users/Hans Martin/Documents/GitHub/MappingLocationData/Basebnp_region/basebnp_region.shp")
+BanffRegions<-spTransform(BanffRegions,CRS("+proj=utm +zone=11 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"))
+
+#Elevation Raster
+#elevation<-raster("elevationDEMYHTBANFF.tif")
+
+```
+```{r include=FALSE, echo=FALSE,echo=FALSE, message=FALSE}
+
+ tmap_mode('view')
+clusterlocmap<-
+  #tm_shape(elevation)+ #loads file (either shape file, raster file, etc...)
+  #tm_raster()+#specifies how r should plot the file (either as a raster, polygon, line, symbol)
+  tm_shape(BanffRegions)+ # loads banff shape file
+  tm_polygons(alpha = .5)+ #plots the shapefile as a polygonalpha =0.5 controls transparency (0-1)
+tm_shape(studyextent)+# loads banff shape file
+ tm_borders(col = "Red")+ #plots only the boundary of the shapefile 
+tm_shape(yahatinda)+
+  tm_polygons(col="darkgray")+
+
+tm_shape(clustershp)+
+  tm_symbols(size=0.001, #plots the spatialpoints dataframe as symbols
+             col="wolf_id", #color is associated with the column "park" in the spatialpointsdataframe
+             #labels = c("Banff","Lake Louise", "Ya Ha Tinda 5x5km Grid","Ya Ha Tinda Grassland Camera Grid"),
+             title.col =  "WolfID")+
+  tm_style_col_blind()+ #uses a colorblind cooperative colorscheme for the symbols
+  
+  #tm_compass(position=c("right", "top"))+ #inserts a compass showing north.
+  
+  tm_add_legend(type="line", col=c("red"), title="Study Area") + #adds a custom legend
+  
+  tm_add_legend(type="fill", col=c("lightgrey"), title="National Park Boundary") + #adds a custom legend 
+  
+  tm_add_legend(type="fill", col=c("darkgray"), title="Ya Ha Tinda Ranch") +#adds a custom legend
+  
+    
+  tm_layout(
+    main.title = "Camera Traps Operated he Ya Ha Tinda Research Project",#text for main title
+            main.title.size = 0.745, #size of main title
+            main.title.position= c("center"),#position of main title ("top","right","bottom")
+            #outer.margins = c(0,0,0,0.01), 
+            inner.margins = c(0.01,0.01,0.01,0.11), 
+            #between.margin = 0.1,
+            compass.type = "arrow", #type of compass rose
+            legend.outside = T, # places the legend inside the map or outside
+            legend.title.size=0.75,
+            legend.text.size=0.5,
+            legend.just = c("right", "top")#specifies legend location
+    ) 
+
+```
+```{r echo=FALSE,echo=FALSE, message=FALSE}
+tmap_leaflet(clusterlocmap,mode="view")
+```
